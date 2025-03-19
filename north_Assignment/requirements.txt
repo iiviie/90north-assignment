@@ -1,0 +1,14 @@
+Django
+django-environ
+gunicorn
+psycopg2-binary
+requests
+google-auth
+google-auth-oauthlib
+google-api-python-client
+channels
+channels-redis
+daphne
+whitenoise
+django-storages
+boto3
