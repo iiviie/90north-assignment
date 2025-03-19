@@ -5,7 +5,7 @@ from .models import UserProfile
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ('id', 'google_token', 'created_at', 'updated_at')
+        fields = ('id', 'google_token', 'refresh_token', 'token_expiry', 'created_at', 'updated_at')
         read_only_fields = ('id', 'created_at', 'updated_at')
 
 class UserSerializer(serializers.ModelSerializer):
@@ -13,5 +13,5 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'profile')
-        read_only_fields = ('id', 'email') 
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'profile')
+        read_only_fields = ('id', 'username', 'email') 
