@@ -5,50 +5,41 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    restart: always
+    command: >
+      sh -c "python manage.py migrate &&
+             daphne -b 0.0.0.0 -p 8000 north_Assignment.asgi:application"
     volumes:
       - ..:/app
+      - static_volume:/app/static
+      - media_volume:/app/media
     env_file:
-      - ./.env
+      - ../.env
+    ports:
+      - "8000:8000"
     depends_on:
-      - db
-      - redis
-    networks:
-      - app-network
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:13
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
-      - ./.env
-    networks:
-      - app-network
-
-  nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
+      - ../.env
     ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - web
-    volumes:
-      - ../static:/app/static
-      - ../media:/app/media
-      - ./nginx/ssl:/etc/nginx/ssl
-    networks:
-      - app-network
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:6
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
+    ports:
+      - "6379:6379"
 
 volumes:
   postgres_data:
+  static_volume:
+  media_volume:
