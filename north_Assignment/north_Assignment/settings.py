@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'oauth2_provider',
     'social_django',
     'rest_framework_social_oauth2',
+    'drf_spectacular',
 ]
 
 
@@ -153,6 +154,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # Google OAuth2 settings
@@ -196,5 +198,17 @@ OAUTH2_PROVIDER = {
     'SCOPES': {
         'read': 'Read scope',
         'write': 'Write scope',
+    }
+}
+
+# Spectacular settings for Swagger
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'North Assignment API',
+    'DESCRIPTION': 'API for Google OAuth, Drive integration and WebSocket chat',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SWAGGER_UI_SETTINGS': {
+        'persistAuthorization': True,
     }
 }

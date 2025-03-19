@@ -16,6 +16,11 @@ class GoogleAuthURLView(APIView):
     permission_classes = [AllowAny]
     
     def get(self, request):
+        """
+        Get Google OAuth2 authentication URL.
+        
+        Returns the URL where users should be redirected to start the Google OAuth2 flow.
+        """
         strategy = load_strategy(request)
         return Response({
             'auth_url': strategy.backend.auth_url()
@@ -25,6 +30,14 @@ class GoogleAuthCallbackView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
+        """
+        Handle Google OAuth2 callback.
+        
+        Verify the Google token and create/update the user profile.
+        
+        Request Body:
+          - token: Google OAuth2 token
+        """
         try:
             token = request.data.get('token')
             idinfo = id_token.verify_oauth2_token(
@@ -58,6 +71,11 @@ class GoogleAuthCallbackView(APIView):
             )
 
 class UserProfileViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for viewing and editing user profiles.
+    
+    Requires authentication.
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
     
