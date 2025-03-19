@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
 from social_django.utils import load_strategy
+from social_django.utils import load_backend
 from google.oauth2.credentials import Credentials
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -22,8 +23,12 @@ class GoogleAuthURLView(APIView):
         Returns the URL where users should be redirected to start the Google OAuth2 flow.
         """
         strategy = load_strategy(request)
+        backend = load_backend(strategy=strategy,
+                             name='google-oauth2',
+                             redirect_uri="http://localhost:8000/auth/google/callback/")
+        
         return Response({
-            'auth_url': strategy.backend.auth_url()
+            'auth_url': backend.auth_url()
         })
 
 class GoogleAuthCallbackView(APIView):
