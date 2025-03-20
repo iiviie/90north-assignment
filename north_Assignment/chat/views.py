@@ -13,8 +13,20 @@ from .serializers import (
     MessageSerializer,
     UserSerializer
 )
+from rest_framework.authtoken.models import Token
 
 # Create your views here.
+
+# View to list all chat rooms
+@login_required
+def index(request):
+    rooms = ChatRoom.objects.filter(participants=request.user)
+    token, _ = Token.objects.get_or_create(user=request.user)
+    
+    return render(request, 'chat/index.html', {
+        'rooms': rooms,
+        'token': token.key
+    })
 
 # View to render the chat room template
 @login_required

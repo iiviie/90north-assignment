@@ -62,14 +62,20 @@ class GoogleDriveViewSet(viewsets.ViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
+            # Get pagination parameters
+            page_size = int(request.query_params.get('page_size', 20))
+            page_token = request.query_params.get('page_token', None)
+            
             # Get files from Google Drive
             results = drive_service.files().list(
-                pageSize=100,
+                pageSize=page_size,
                 fields="nextPageToken, files(id, name, mimeType, size, createdTime, modifiedTime)",
-                q="trashed=false"
+                q="trashed=false",
+                pageToken=page_token
             ).execute()
             
             items = results.get('files', [])
+            next_page_token = results.get('nextPageToken')
             
             logger.debug(f"Found {len(items)} files in Google Drive")
             for item in items:
@@ -91,10 +97,20 @@ class GoogleDriveViewSet(viewsets.ViewSet):
             files = DriveFile.objects.filter(user=request.user)
             serializer = DriveFileSerializer(files, many=True)
             
-            return Response(serializer.data)
+            response_data = {
+                'results': serializer.data,
+                'next_page_token': next_page_token
+            }
+            
+            return Response(response_data)
             
         except Exception as e:
             logger.error(f"Error listing files: {str(e)}")
+            if 'invalid_grant' in str(e):
+                return Response(
+                    {'error': 'Google Drive token expired. Please re-authenticate.'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
             return Response(
                 {'error': f'Error listing files: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

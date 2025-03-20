@@ -43,12 +43,12 @@ INSTALLED_APPS = [
     
     # Third-party apps
     'channels',
+    'chat',
     'rest_framework.authtoken',
     
     # Local apps
     'authentication',
     'drive',
-    'chat',
     'rest_framework',
     'corsheaders',
     'oauth2_provider',
@@ -164,7 +164,6 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework_social_oauth2.authentication.SocialAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -183,6 +182,7 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('GOOGLE_OAUTH2_KEY')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('GOOGLE_OAUTH2_SECRET')
 GOOGLE_DEVELOPER_KEY = config('GOOGLE_DEVELOPER_KEY', default=SOCIAL_AUTH_GOOGLE_OAUTH2_KEY)
 GOOGLE_APP_ID = config('GOOGLE_APP_ID', default='')
+GOOGLE_REDIRECT_URI = config('GOOGLE_REDIRECT_URI')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
     'openid',
     'https://www.googleapis.com/auth/userinfo.email',
@@ -239,7 +239,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [(config('REDIS_HOST'), config('REDIS_PORT', cast=int))],
+            "hosts": [(config('REDIS_HOST', default='redis'), config('REDIS_PORT', default=6379, cast=int))],
         },
     },
 }
@@ -250,15 +250,27 @@ ASGI_APPLICATION = 'north_Assignment.asgi.application'
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.google.GoogleOAuth2',
     'rest_framework_social_oauth2.backends.DjangoOAuth2',
-    'django.contrib.auth.backends.ModelBackend',
 )
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://13.203.177.26',
+    'http://ec2-13-203-177-26.ap-south-1.compute.amazonaws.com',
+    'http://13.203.177.26:8000',
+    'http://ec2-13-203-177-26.ap-south-1.compute.amazonaws.com:8000'
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://13.203.177.26',
+    'http://ec2-13-203-177-26.ap-south-1.compute.amazonaws.com',
+    'http://13.203.177.26:8000',
+    'http://ec2-13-203-177-26.ap-south-1.compute.amazonaws.com:8000'
+]
 
 # OAuth2 settings
 OAUTH2_PROVIDER = {

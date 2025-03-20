@@ -17,6 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework.routers import DefaultRouter
+from chat.views import ChatRoomViewSet
+
+# Create a router for the chat API
+chat_router = DefaultRouter()
+chat_router.register(r'chat/rooms', ChatRoomViewSet, basename='chatroom')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,6 +31,7 @@ urlpatterns = [
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('drive/', include('drive.urls')),
     path('chat/', include('chat.urls')),
+    path('api/', include(chat_router.urls)),  # Include chat API endpoints
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
