@@ -4,7 +4,8 @@ gunicorn
 psycopg2-binary==2.9.9
 requests
 google-auth
-google-auth-oauthlib
+google-auth-oauthlib>=0.4.6
+google-auth-httplib2>=0.1.0
 google-api-python-client
 channels
 channels-redis

@@ -14,6 +14,7 @@ from google_auth_oauthlib.flow import Flow
 from datetime import datetime, timedelta
 from .serializers import UserSerializer
 from .models import UserProfile
+from rest_framework.authtoken.models import Token
 import json
 import logging
 import os
@@ -157,8 +158,22 @@ class GoogleAuthCallbackView(APIView):
             
             profile.save()
             
-            serializer = UserSerializer(user)
-            return Response(serializer.data)
+            # Create or get token for API authentication
+            token, _ = Token.objects.get_or_create(user=user)
+            
+            # Return user data and tokens
+            user_data = UserSerializer(user).data
+            user_data['profile'] = {
+                'id': profile.id,
+                'google_token': profile.google_token,
+                'refresh_token': profile.refresh_token,
+                'token_expiry': profile.token_expiry,
+                'created_at': profile.created_at,
+                'updated_at': profile.updated_at
+            }
+            user_data['api_token'] = token.key
+            
+            return Response(user_data)
 
         except Exception as e:
             return Response(
