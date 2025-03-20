@@ -191,11 +191,46 @@ class GoogleDriveViewSet(viewsets.ViewSet):
             # Create a BytesIO object to store the downloaded file
             file_buffer = io.BytesIO()
             
-            # Get the file from Google Drive
-            request = drive_service.files().get_media(fileId=drive_file.file_id)
-            downloader = MediaIoBaseDownload(file_buffer, request)
+            # Check if this is a Google Workspace file (Docs, Sheets, Slides, etc.)
+            if drive_file.mime_type in [
+                'application/vnd.google-apps.document',
+                'application/vnd.google-apps.spreadsheet',
+                'application/vnd.google-apps.presentation',
+                'application/vnd.google-apps.drawing',
+            ]:
+                # Map Google Workspace MIME types to export formats
+                export_formats = {
+                    'application/vnd.google-apps.document': 'application/pdf',
+                    'application/vnd.google-apps.spreadsheet': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'application/vnd.google-apps.presentation': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                    'application/vnd.google-apps.drawing': 'application/pdf',
+                }
+                
+                # Get the appropriate export format
+                export_mime_type = export_formats.get(drive_file.mime_type)
+                
+                # Export the file
+                request = drive_service.files().export_media(
+                    fileId=drive_file.file_id,
+                    mimeType=export_mime_type
+                )
+                
+                # Set appropriate file extension
+                extension_map = {
+                    'application/pdf': '.pdf',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+                    'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+                }
+                ext = extension_map.get(export_mime_type, '')
+                filename = f"{drive_file.name}{ext}"
+                
+            else:
+                # For regular files, use get_media
+                request = drive_service.files().get_media(fileId=drive_file.file_id)
+                filename = drive_file.name
             
             # Download the file
+            downloader = MediaIoBaseDownload(file_buffer, request)
             done = False
             while not done:
                 status_download, done = downloader.next_chunk()
@@ -207,7 +242,7 @@ class GoogleDriveViewSet(viewsets.ViewSet):
             return FileResponse(
                 file_buffer,
                 as_attachment=True,
-                filename=drive_file.name
+                filename=filename
             )
             
         except DriveFile.DoesNotExist:
@@ -331,6 +366,97 @@ class GoogleDriveViewSet(viewsets.ViewSet):
             logger.error(f"Error listing files directly: {str(e)}")
             return Response(
                 {'error': f'Error listing files: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['get'])
+    def direct_download(self, request):
+        """Download a file from Google Drive using the file_id."""
+        try:
+            file_id = request.query_params.get('file_id')
+            if not file_id:
+                return Response(
+                    {'error': 'No file ID provided in query parameters'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            drive_service = self._get_drive_service(request.user)
+            
+            if not drive_service:
+                return Response(
+                    {'error': 'Google Drive not connected'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get file metadata to get the filename and mime type
+            file_metadata = drive_service.files().get(
+                fileId=file_id,
+                fields='name,mimeType'
+            ).execute()
+            
+            filename = file_metadata.get('name', 'downloaded_file')
+            mime_type = file_metadata.get('mimeType', '')
+            
+            # Create a BytesIO object to store the downloaded file
+            file_buffer = io.BytesIO()
+            
+            # Check if this is a Google Workspace file (Docs, Sheets, Slides, etc.)
+            if mime_type in [
+                'application/vnd.google-apps.document',
+                'application/vnd.google-apps.spreadsheet',
+                'application/vnd.google-apps.presentation',
+                'application/vnd.google-apps.drawing',
+            ]:
+                # Map Google Workspace MIME types to export formats
+                export_formats = {
+                    'application/vnd.google-apps.document': 'application/pdf',
+                    'application/vnd.google-apps.spreadsheet': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'application/vnd.google-apps.presentation': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                    'application/vnd.google-apps.drawing': 'application/pdf',
+                }
+                
+                # Get the appropriate export format
+                export_mime_type = export_formats.get(mime_type)
+                
+                # Export the file
+                request = drive_service.files().export_media(
+                    fileId=file_id,
+                    mimeType=export_mime_type
+                )
+                
+                # Set appropriate file extension
+                extension_map = {
+                    'application/pdf': '.pdf',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+                    'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+                }
+                ext = extension_map.get(export_mime_type, '')
+                filename = f"{filename}{ext}"
+                
+            else:
+                # For regular files, use get_media
+                request = drive_service.files().get_media(fileId=file_id)
+            
+            # Download the file
+            downloader = MediaIoBaseDownload(file_buffer, request)
+            done = False
+            while not done:
+                status_download, done = downloader.next_chunk()
+            
+            # Reset the file pointer to the beginning
+            file_buffer.seek(0)
+            
+            # Return the file as a response
+            return FileResponse(
+                file_buffer,
+                as_attachment=True,
+                filename=filename
+            )
+                
+        except Exception as e:
+            logger.error(f"Error downloading file directly: {str(e)}")
+            return Response(
+                {'error': f'Error downloading file: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

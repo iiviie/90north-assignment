@@ -24,6 +24,7 @@ urlpatterns = [
     path('auth/social/', include('rest_framework_social_oauth2.urls', namespace='social')),
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('drive/', include('drive.urls')),
+    path('chat/', include('chat.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
